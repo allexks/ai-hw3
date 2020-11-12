@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from typing import Generator, Set, Tuple, List
 
 from math import sqrt, factorial, inf
-from random import randint, random
-from itertools import permutations
+from random import randint, random, shuffle
 
 @dataclass(frozen=True)
 class Point:
@@ -35,9 +34,9 @@ class World:
             points_set.add(Point(x, y))
         self.points = tuple(points_set)
 
-@dataclass
+@dataclass(frozen=True)
 class PossibleSolution:
-    path: List[int]
+    path: Tuple[int, ...]
     """The solution consists of a list of the points' indexes."""
 
     def __str__(self) -> str:
@@ -65,12 +64,14 @@ class EvolutionMachine:
         self.world = world
         size = world.points_count
         self.population_size = size**2 if size > 4 else factorial(size)
-        self.population: List[PossibleSolution] = []
 
         # Initial population
-        perms = permutations(list(range(size)), size)
-        while len(self.population) < self.population_size:
-            self.population.append(PossibleSolution(list(next(perms))))
+        population_set: Set[PossibleSolution] = set()
+        while len(population_set) < self.population_size:
+            new_path = list(range(len(world.points)))
+            shuffle(new_path)
+            population_set.add(PossibleSolution(tuple(new_path)))
+        self.population = list(population_set)
 
     def __next__(self) -> PossibleSolution:
         new_generation: List[PossibleSolution] = []
