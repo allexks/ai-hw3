@@ -56,7 +56,7 @@ class PossibleSolution:
 class EvolutionMachine:
     SELECTION_FRACTION = 0.5
     MUTATION_CHANCE = 0.1
-    STOP_CONDITION_SAME_COUNT = 22
+    STOP_CONDITION_SAME_COUNT = 16
 
     def __init__(self, world: World):
         self.world = world
@@ -82,17 +82,12 @@ class EvolutionMachine:
     def __iter__(self) -> Generator[PossibleSolution, None, None]:
         same_count = 1
         last = +inf
-        iteration = 1
-        while True:
+        while same_count < self.STOP_CONDITION_SAME_COUNT - 1:
             next_solution = next(self)
-            print(f"({iteration})", end=" ")
-            yield next_solution
-            iteration += 1
             cost = next_solution.cost(self.world)
             same_count = 0 if cost != last else same_count + 1
             last = min(cost, last)
-            if same_count == self.STOP_CONDITION_SAME_COUNT:
-                break
+            yield next_solution
 
     def __selection(self) -> List[Tuple[PossibleSolution, PossibleSolution]]:
         """https://en.wikipedia.org/wiki/Fitness_proportionate_selection"""
@@ -167,5 +162,7 @@ if __name__ == '__main__':
     world = World(n)
     machine = EvolutionMachine(world)
 
+    iteration = 1
     for solution in machine:
-        print(f"Cost {int(solution.cost(world))} for {solution}")
+        print(f"({iteration}) Cost {int(solution.cost(world))} for {solution}")
+        iteration+=1
