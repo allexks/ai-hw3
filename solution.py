@@ -40,6 +40,9 @@ class PossibleSolution:
     path: List[int]
     """The solution consists of a list of the points' indexes."""
 
+    def __str__(self) -> str:
+        return "->".join(map(str, self.path))
+
     def cost(self, world: World) -> float:
         # result = 0.0
         # for i, p1_index in enumerate(self.path[:-1]):
@@ -56,6 +59,7 @@ class PossibleSolution:
 class EvolutionMachine:
     SELECTION_FRACTION = 0.5
     MUTATION_CHANCE = 0.1
+    STOP_CONDITION_SAME_COUNT = 22
 
     def __init__(self, world: World):
         self.world = world
@@ -68,17 +72,25 @@ class EvolutionMachine:
         while len(self.population) < self.population_size:
             self.population.append(PossibleSolution(list(next(perms))))
 
-    def __next__(self) -> Generator[PossibleSolution, None, None]:
-        while True:
-            new_generation: List[PossibleSolution] = []
-            for s1, s2 in self.__selection():
-                new_generation.extend(self.__crossover(s1, s2))
-            self.__mutation()
-            self.__merge_generations(new_generation)
-            yield self.population[0]
+    def __next__(self) -> PossibleSolution:
+        new_generation: List[PossibleSolution] = []
+        for s1, s2 in self.__selection():
+            new_generation.extend(self.__crossover(s1, s2))
+        self.__mutation()
+        self.__merge_generations(new_generation)
+        return self.population[0]
 
-    def __iter__(self):
-        return next(self)
+    def __iter__(self) -> Generator[PossibleSolution, None, None]:
+        same_count = 0
+        last = +inf
+        while True:
+            next_solution = next(self)
+            yield next_solution
+            cost = next_solution.cost(self.world)
+            same_count = 0 if cost != last else same_count + 1
+            last = min(cost, last)
+            if same_count == self.STOP_CONDITION_SAME_COUNT:
+                break
 
     def __selection(self) -> List[Tuple[PossibleSolution, PossibleSolution]]:
         """https://en.wikipedia.org/wiki/Fitness_proportionate_selection"""
@@ -133,13 +145,5 @@ if __name__ == '__main__':
     n = int(input())
     world = World(n)
     machine = EvolutionMachine(world)
-
-    same_count = 0
-    last = +inf
     for solution in machine:
-        cost = solution.cost(world)
-        print(cost)
-        same_count = 0 if cost != last else same_count + 1
-        last = min(cost, last)
-        if same_count == 42:
-            break
+        print(f"Cost {solution.cost(world)} for {solution}")
