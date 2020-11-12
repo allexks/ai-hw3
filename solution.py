@@ -20,13 +20,11 @@ class Point:
 
 class World:
     points: Tuple[Point, ...]
-    points_count: int
 
     COORDINATE_MIN = 0
     COORDINATE_MAX = 69420
 
     def __init__(self, points_count: int):
-        self.points_count = points_count
         points_set: Set[Point] = set()
         while len(points_set) < points_count:
             x = randint(self.COORDINATE_MIN, self.COORDINATE_MAX)
@@ -62,7 +60,7 @@ class EvolutionMachine:
 
     def __init__(self, world: World):
         self.world = world
-        size = world.points_count
+        size = len(world.points)
         self.population_size = size**2 if size > 4 else factorial(size)
 
         # Initial population
@@ -82,11 +80,14 @@ class EvolutionMachine:
         return self.population[0]
 
     def __iter__(self) -> Generator[PossibleSolution, None, None]:
-        same_count = 0
+        same_count = 1
         last = +inf
+        iteration = 1
         while True:
             next_solution = next(self)
+            print(f"({iteration})", end=" ")
             yield next_solution
+            iteration += 1
             cost = next_solution.cost(self.world)
             same_count = 0 if cost != last else same_count + 1
             last = min(cost, last)
@@ -122,7 +123,7 @@ class EvolutionMachine:
         self, s1: PossibleSolution, s2: PossibleSolution
     ) -> Tuple[PossibleSolution, PossibleSolution]:
         """https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)#Single-point_crossover"""
-        i = randint(1, self.world.points_count-1)
+        i = randint(1, len(self.world.points)-1)
         i1, i2 = i, i
         first = s1.path[:i]
         second = s2.path[:i]
@@ -153,7 +154,7 @@ class EvolutionMachine:
         self.population.sort(key=lambda s: s.cost(self.world))
 
     def __fitness(self, s: PossibleSolution) -> float:
-        return sqrt(2) * self.world.points_count - s.cost(self.world)
+        return sqrt(2) * len(self.world.points) - s.cost(self.world)
 
 
 if __name__ == '__main__':
@@ -162,7 +163,9 @@ if __name__ == '__main__':
         n = int(argv[1])
     else:
         n = int(input())
+
     world = World(n)
     machine = EvolutionMachine(world)
+
     for solution in machine:
-        print(f"Cost {solution.cost(world)} for {solution}")
+        print(f"Cost {int(solution.cost(world))} for {solution}")
