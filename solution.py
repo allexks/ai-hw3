@@ -123,8 +123,22 @@ class EvolutionMachine:
     ) -> Tuple[PossibleSolution, PossibleSolution]:
         """https://en.wikipedia.org/wiki/Crossover_(genetic_algorithm)#Single-point_crossover"""
         i = randint(1, self.world.points_count-1)
-        first = s1.path[:i] + s2.path[i:]
-        second = s2.path[:i] + s1.path[i:]
+        i1, i2 = i, i
+        first = s1.path[:i]
+        second = s2.path[:i]
+        specimen_len = len(self.world.points)
+        while len(first) < specimen_len:
+            current_chromosome = s2.path[i1 % specimen_len]
+            if current_chromosome not in first:
+                first = first + (current_chromosome,)
+            i1 += 1
+        while len(second) < specimen_len:
+            current_chromosome = s1.path[i2 % specimen_len]
+            if current_chromosome not in second:
+                second = second + (current_chromosome,)
+            i2 += 1
+        assert len(first) == len(set(first)), "Crossover not valid!"
+        assert len(second) == len(set(second)), "Crossover not valid!"
         return PossibleSolution(first), PossibleSolution(second)
 
     def __mutation(self):
@@ -143,7 +157,11 @@ class EvolutionMachine:
 
 
 if __name__ == '__main__':
-    n = int(input())
+    from sys import argv
+    if len(argv) >= 2:
+        n = int(argv[1])
+    else:
+        n = int(input())
     world = World(n)
     machine = EvolutionMachine(world)
     for solution in machine:
