@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generator, Set, Tuple, List
 
+from copy import deepcopy
 from math import sqrt, factorial, inf
 from random import randint, random, shuffle
 
@@ -75,7 +76,7 @@ class EvolutionMachine:
         new_generation: List[PossibleSolution] = []
         for s1, s2 in self.__selection():
             new_generation.extend(self.__crossover(s1, s2))
-        self.__mutation()
+        self.__mutation(new_generation)
         self.__merge_generations(new_generation)
         return self.population[0]
 
@@ -137,8 +138,23 @@ class EvolutionMachine:
         assert len(second) == len(set(second)), "Crossover not valid!"
         return PossibleSolution(first), PossibleSolution(second)
 
-    def __mutation(self):
-        pass # TODO
+    def __mutation(self, new_generation: List[PossibleSolution]):
+        """Implementation uses inversion mutation type."""
+        new_gen_copy = deepcopy(new_generation)
+        for i, specimen in enumerate(new_gen_copy):
+            if random() > self.MUTATION_CHANCE:
+                continue
+
+            chromosomes = list(specimen.path)
+            size = len(chromosomes)
+            subpath_start_index= randint(0, size-2)
+            subpath_end_index = randint(subpath_start_index+1, size-1)
+            inverted_subpath = list(reversed(chromosomes[subpath_start_index:subpath_end_index+1]))
+            new_chromosomes = chromosomes[:subpath_start_index] + inverted_subpath + chromosomes[subpath_end_index+1:]
+            assert len(new_chromosomes) == size, "Mutation not valid: size of specimen not correct"
+            assert len(new_chromosomes) == len(set(new_chromosomes)), "Mutation produced an invalid specimen"
+            new_generation[i] = PossibleSolution(tuple(new_chromosomes))
+
 
     def __merge_generations(self, children: List[PossibleSolution]):
         self.population.extend(children)
@@ -149,6 +165,7 @@ class EvolutionMachine:
         self.population.sort(key=lambda s: s.cost(self.world))
 
     def __fitness(self, s: PossibleSolution) -> float:
+        """Fitness function used in the selection process."""
         return sqrt(2) * len(self.world.points) - s.cost(self.world)
 
 
