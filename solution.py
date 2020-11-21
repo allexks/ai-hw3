@@ -180,6 +180,16 @@ if __name__ == '__main__':
     machine = EvolutionMachine(world)
 
     iteration = 1
+    last_cost = +inf
     for solution in machine:
-        print(f"({iteration}) Cost {int(solution.cost(world))} for {solution}")
+        curr_cost = solution.cost(world)
+
+        if curr_cost != last_cost:
+            print(f"\nGeneration {iteration} -> Cost {curr_cost}")
+        else:
+            print(".", end="", flush=True)
+
+        last_cost = curr_cost
         iteration+=1
+
+    print(f"\nFinal generation ({iteration}) -> Cost {last_cost}")
